@@ -16,6 +16,8 @@ This will start the cluster with the following configuration:
 ## Running Benchmarks
 ``cd benchmark``
 
+``pip install -r requirements.txt``
+
 ### Word Count 
 ``python cli.py wc redis [text_file]``
 
