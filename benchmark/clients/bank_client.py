@@ -10,11 +10,11 @@ class BankClient(abc.ABC):
     pass
 
   @abc.abstractmethod
-  def deposit(self, money: int):
+  def deposit(self, money: float):
     pass
 
   @abc.abstractmethod
-  def withdraw(self, money: int) -> None:
+  def withdraw(self, money: float) -> None:
     pass
 
   @abc.abstractmethod
@@ -31,16 +31,31 @@ class RedisBankClient(BankClient):
     super().__init__()
     self._client = redis.client.Redis(port=config.RDS_MASTER_PORT)
     self._client.flushdb() if flush else None
-    self._key = 'bank_account'
+    self._key = 'bank'
 
-  def deposit(self, money: int):
-    self._client.incrby(self._key, money)
+  def deposit(self, money: float):
+    self._client.incrbyfloat(self._key, money)
 
-  def withdraw(self, money: int) -> None:
-    self._client.incrby(self._key, -money)
+  def withdraw(self, money: float) -> None:
+    self._client.incrbyfloat(self._key, -money)
 
   def accrue_interest(self) -> None:
-    self._client.fcall('accrue_interest', 1, [self._key])
+    self._client.fcall('accrue_interest', 1, self._key, config.BANK_INTEREST)
 
   def read_balance(self) -> float:
-    return int(self._client.get(self._key))
+    return self._client.get(self._key)
+
+
+class RedBlueBankClient(BankClient):
+
+  def deposit(self, money: int):
+    pass
+
+  def withdraw(self, money: int) -> None:
+    pass
+
+  def accrue_interest(self) -> None:
+    pass
+
+  def read_balance(self) -> float:
+    pass
