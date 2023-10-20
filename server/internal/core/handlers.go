@@ -3,7 +3,6 @@ package core
 import (
 	"errors"
 	"io"
-	"log"
 )
 
 const OK_STRING = "OK"
@@ -35,14 +34,13 @@ func HandleCommands(c io.ReadWriter, command *Command) error {
 
 func handleSET(key string, val string) []byte {
 	Set(key, NewObject(val, OBJ_TYPE_STRING))
-	log.Println("SET", key, val)
 	return OK
 }
 
 func handleGET(key string) []byte {
 	obj := Get(key)
 	if obj == nil {
-		return []byte("Key not found") // TODO: Return proper error
+		return []byte("Key not found")
 	}
 	return []byte(obj.Val.(string))
 }
