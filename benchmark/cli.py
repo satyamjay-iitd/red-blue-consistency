@@ -23,7 +23,7 @@ class ClientsEnum(str, Enum):
 @app.command()
 def wc(
         client: Annotated[ClientsEnum, typer.Argument(case_sensitive=False, help="Client to use")],
-        txt_file: Annotated[str, typer.Argument(help="Path to text file", exists=True)] = '../data/small.txt'
+        txt_file: Annotated[str, typer.Argument(help="Path to text file", exists=True)] = '../data/wc/small.txt'
 ):
     benchmark = WCBenchmark(client.to_client(), txt_file)
     benchmark.run()

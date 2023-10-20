@@ -3,7 +3,7 @@
 
 ## Redis configuration to compare against
 
-3 Redis instances, one master and 2 replicas
+Three Redis instances, one master and 2 replicas
 
 Start the cluster using `docker compose up`
 
@@ -12,6 +12,10 @@ This will start the cluster with the following configuration:
 - Master listening on 6379
 - Replica 1 listening on 6380
 - Replica 2 listening on 6381
+
+Loading custom functions
+
+`` cat mylib.lua | redis-cli -p 6379 -x FUNCTION LOAD REPLACE``
 
 ## Running Benchmarks
 ``cd benchmark``
