@@ -25,6 +25,7 @@ func (h HsetInt) Get(key string) string {
 		return strconv.Itoa(val)
 	} else {
 		// Should we return a proper error in error cases?
+		log.Printf("Key %s not found in HsetInt", key)
 		return ""
 	}
 }
