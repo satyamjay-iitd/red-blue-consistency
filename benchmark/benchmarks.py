@@ -1,9 +1,11 @@
 import abc
+import math
 import time
 from collections import defaultdict
 from rich.progress import track
 from rich import print
 
+import config
 from clients.bank_client import BankClient
 from clients.wc_client import WordCountClient
 
@@ -19,9 +21,9 @@ class Benchmark(abc.ABC):
     print(f"[bold uu yellow]Took {total_time}s[/bold uu yellow]")
     print()
     if not self.verify():
-      print(f"[red][bold]INCORRECT[/bold] {self.name}[/red]")
+      print(f"[red][bold]INCONSISTENT[/bold] {self.name}[/red]")
     else:
-      print(f"{self.name} [green][bold]Correct[/bold] [/green]")
+      print(f"{self.name} [green][bold]CONSISTENT[/bold] [/green]")
     return total_time
 
   @abc.abstractmethod
@@ -59,7 +61,7 @@ class WCBenchmark(Benchmark):
   def verify(self) -> bool:
     ground_truth = self._wc_offline()
     to_test = self._client.read_all()
-    for k, v in track(to_test.items(), description="[blue]Verifying...[/blue]"):
+    for k, v in track(to_test.items(), description="[blue]Verifying Consistency...[/blue]"):
       if isinstance(k, bytes):    # Redis will return dict[bytes, bytes]
         k = k.decode()
       if ground_truth[k] != int(v):
@@ -93,7 +95,7 @@ class BankBenchmark(Benchmark):
         self._client.accrue_interest()
 
   def verify(self) -> bool:
-    return self._client.read_balance() == self._bank_offline()
+    return math.isclose(float(self._client.read_balance()), self._bank_offline())
 
   def __len__(self):
     pass
@@ -104,11 +106,11 @@ class BankBenchmark(Benchmark):
 
   def _bank_offline(self) -> float:
     balance = 0
-    for command in track(self._command_list, description="[blue]correctness...[/blue]"):
+    for command in track(self._command_list, description="[blue]Verifying Consistency...[/blue]"):
       if command.startswith('d'):
-        balance += int(command.split()[1])
+        balance += float(command.split()[1])
       elif command.startswith('w'):
-        balance -= int(command.split()[1])
+        balance -= float(command.split()[1])
       elif command.startswith('i'):
-        balance += balance * 0.5
+        balance += balance * config.BANK_INTEREST
     return balance

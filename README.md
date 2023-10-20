@@ -13,7 +13,7 @@ This will start the cluster with the following configuration:
 - Replica 1 listening on 6380
 - Replica 2 listening on 6381
 
-Loading custom functions
+### Loading custom lua functions on Redis
 
 `` cat mylib.lua | redis-cli -p 6379 -x FUNCTION LOAD REPLACE``
 
@@ -23,7 +23,11 @@ Loading custom functions
 ``pip install -r requirements.txt``
 
 ### Word Count 
-``python -m cli wc redis [text_file]``
+``python -m cli wc redis|redblue [text_file]``
 
-``python -m cli wc redblue [text_file]``
+``python -m cli wc --help``
 
+### Bank
+``python -m cli bank redis|redblue [num_txns] [withdrawl_prob] [deposit_prob] [interest_rate]``
+
+``python -m cli bank --help``
