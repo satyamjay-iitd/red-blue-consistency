@@ -4,7 +4,7 @@ from typing import Annotated
 import typer
 
 from benchmarks import WCBenchmark
-from clients import RedisWCClient, RedBlueWCClient
+from clients.wc_client import RedisWCClient, RedBlueWCClient
 
 app = typer.Typer()
 

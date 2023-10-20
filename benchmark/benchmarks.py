@@ -4,7 +4,7 @@ from collections import defaultdict
 from rich.progress import track
 from rich import print
 
-from clients import WordCountClient
+from clients.wc_client import WordCountClient
 
 
 class Benchmark(abc.ABC):
@@ -20,7 +20,7 @@ class Benchmark(abc.ABC):
     if not self.verify():
       print(f"[red][bold]INCORRECT[/bold] {self.name}[/red]")
     else:
-      print(f"[green][bold]Correct[/bold] {self.name}[/green]")
+      print(f"{self.name} [green][bold]Correct[/bold] [/green]")
     return total_time
 
   @abc.abstractmethod
