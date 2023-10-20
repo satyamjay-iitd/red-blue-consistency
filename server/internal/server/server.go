@@ -1,11 +1,14 @@
 package server
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"log"
 	"net"
 	"os"
+	"redblue/internal/core"
+	"strings"
 	"syscall"
 )
 
@@ -32,18 +35,32 @@ func getConfig() Config {
 	return config
 }
 
-func readCommand(c io.ReadWriter) (string, error) {
+func readCommand(c io.ReadWriter) (*core.Command, error) {
 	var buf []byte = make([]byte, 512) //
 	n, err := c.Read(buf[:])
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return string(buf[:n]), nil
+
+	// Remove new line characters from buf
+	buf = bytes.Trim(buf[:n], "\n")
+
+	commandString := string(buf)
+	cmds := strings.Split(commandString, " ")
+	return &core.Command{
+		Name: cmds[0],
+		Args: cmds[1:],
+	}, nil
 }
 
-func respond(c io.ReadWriter, response string) error {
-	_, err := c.Write([]byte(response))
-	return err
+func respond(c io.ReadWriter, command *core.Command) error {
+	err := core.HandleCommands(c, command)
+	if err != nil {
+		log.Println(err)
+		_, err = c.Write([]byte(err.Error()))
+		return err
+	}
+	return nil
 }
 
 func StartTcpServer() error {
