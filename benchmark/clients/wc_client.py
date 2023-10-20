@@ -37,6 +37,8 @@ class RedisWCClient(WordCountClient):
 
   def increment(self, key):
     self._client.hincrby(self._key, key, 1)
+    if config.RDS_REP_IN_SYNC:
+      self._client.wait(2, 0)
 
 
 class RedBlueWCClient(WordCountClient):
