@@ -35,6 +35,11 @@ func HandleCommands(c io.ReadWriter, command *Command) error {
 			return errors.New("HINCRBY command requires 3 arguments")
 		}
 		resp = handleHINCRBY(command.Args[0], command.Args[1], command.Args[2])
+	case "HGETALL":
+		if len(command.Args) != 1 {
+			return errors.New("HGETALL command requires 1 argument")
+		}
+		resp = handleHGETALL(command.Args[0])
 	default:
 		return errors.New("unknown command")
 	}
@@ -83,4 +88,15 @@ func handleHINCRBY(key string, field string, incr string) []byte {
 		Set(key, NewObject(hset, OBJ_TYPE_HASH_INT))
 	}
 	return OK
+}
+
+func handleHGETALL(key string) []byte {
+	obj := Get(key)
+	if obj == nil {
+		return []byte("Key not found")
+	} else if obj.Type != OBJ_TYPE_HASH_INT {
+		return []byte("Key is not an int hash")
+	}
+	hset := obj.Val.(HsetInt)
+	return hset.GetAll()
 }

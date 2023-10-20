@@ -1,6 +1,7 @@
 package core
 
 import (
+	"encoding/json"
 	"log"
 	"strconv"
 )
@@ -28,4 +29,21 @@ func (h HsetInt) Get(key string) string {
 		log.Printf("Key %s not found in HsetInt", key)
 		return ""
 	}
+}
+
+func (h HsetInt) GetAll() []byte {
+	// var resp []byte
+	// for key, val := range h {
+	// 	resp = append(resp, []byte(key)...)
+	// 	resp = append(resp, []byte(":")...)
+	// 	resp = append(resp, []byte(strconv.Itoa(val))...)
+	// 	resp = append(resp, []byte("\n")...)
+	// }
+	// return resp
+	resp, err := json.Marshal(h)
+	if err != nil {
+		log.Println(err)
+		return []byte("Error")
+	}
+	return resp
 }
