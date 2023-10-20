@@ -8,7 +8,10 @@ services:
       - "${RDS_MASTER_PORT}:6379"
     networks:
       - redis-replication
-
+    profiles:
+      - 'redis'
+      - 'all'
+  
   redis-replica-1:
     image: redis:7.2.0
     container_name: redis-replica-1
@@ -19,6 +22,9 @@ services:
       - redis
     networks:
       - redis-replication
+    profiles:
+      - 'redis'
+      - 'all'
 
   redis-replica-2:
     image: redis:7.2.0
@@ -30,6 +36,26 @@ services:
       - redis
     networks:
       - redis-replication
+    profiles:
+      - 'redis'
+      - 'all'
+  
+  redblue-1:
+    build:
+      context: ./server
+      dockerfile: ./Dockerfile
+
+    container_name: redblue-1
+    ports:
+      - "7379:7379"
+    networks:
+      - redblue-cluster
+    profiles:
+      - 'rb'
+      - 'all'
+    
 networks:
   redis-replication:
+    driver: bridge
+  redblue-cluster:
     driver: bridge

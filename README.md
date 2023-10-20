@@ -5,7 +5,7 @@
 
 Three Redis instances, one master and 2 replicas
 
-Start the cluster using `docker compose up`
+Start the cluster using `make redis`
 
 This will start the cluster with the following configuration:
 
@@ -14,7 +14,12 @@ This will start the cluster with the following configuration:
 - Replica 2 listening on 6381
 
 ## Our configuration (RedBlue Consistent)
-### Coming soon
+Start the cluster using `make redblue`
+
+Start both redis and rb in one command using `make both`
+
+Stop all instances using `make clean`
+
 
 ### Loading custom lua functions on Redis
 
