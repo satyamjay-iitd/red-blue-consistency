@@ -1,7 +1,7 @@
-## Our configuration
-### Coming soon
+# Comparing RedBlue Consistency VS Strict Consistency
+[RedBlue Consistency](https://www.usenix.org/system/files/conference/osdi12/osdi12-final-162.pdf)
 
-## Redis configuration to compare against
+## Redis configuration (Strict Consistent) to compare against
 
 Three Redis instances, one master and 2 replicas
 
@@ -12,6 +12,9 @@ This will start the cluster with the following configuration:
 - Master listening on 6379
 - Replica 1 listening on 6380
 - Replica 2 listening on 6381
+
+## Our configuration (RedBlue Consistent)
+### Coming soon
 
 ### Loading custom lua functions on Redis
 
