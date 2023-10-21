@@ -1,4 +1,5 @@
 redblue:
+	docker-compose --profile rb build
 	docker-compose --profile rb up
 
 redis:
