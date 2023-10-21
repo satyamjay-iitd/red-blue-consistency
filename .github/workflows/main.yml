@@ -28,7 +28,6 @@ jobs:
         debug: true
         directory: ./
         badge: ./output/badge.svg
-        patterns: '*.py|*.go'  # Patterns in the format of a '.gitignore' file, separated by pipes.
         ignore: 'README'
   
     - name: Print the output
