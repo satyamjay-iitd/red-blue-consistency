@@ -7,5 +7,8 @@ import (
 
 func main() {
 	log.Println("Starting the RedBlue server...")
-	server.StartTcpServer()
+	err := server.StartTcpServer()
+	if err != nil {
+		panic(err)
+	}
 }
