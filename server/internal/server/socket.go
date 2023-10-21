@@ -7,7 +7,7 @@ type Socket struct {
 }
 
 func (s Socket) Write(b []byte) (int, error) {
-	return syscall.Write(s.Fd, b)
+	return syscall.Write(s.Fd, append(b, '\n'))
 }
 
 func (s Socket) Read(b []byte) (int, error) {

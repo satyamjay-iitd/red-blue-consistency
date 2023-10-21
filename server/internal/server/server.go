@@ -148,7 +148,7 @@ func StartTcpServer() error {
 				if err != nil {
 					log.Println(err)
 				}
-				syscall.Close(fd)
+				//syscall.Close(fd)
 			}
 		}
 	}

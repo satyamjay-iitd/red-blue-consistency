@@ -5,7 +5,7 @@ import (
 	"io"
 )
 
-const OK_STRING = "OK\n"
+const OK_STRING = "OK"
 
 var OK = []byte(OK_STRING)
 
