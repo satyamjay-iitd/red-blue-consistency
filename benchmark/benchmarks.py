@@ -52,7 +52,10 @@ class WCBenchmark(Benchmark):
 
   def __call__(self, *args, **kwargs):
     for word in track(self._word_list, description="Processing..."):
+      word.replace('"', '')
+      word.replace("'", '')
       self._client.increment(word)
+    self._client.read_all()
 
   @property
   def __len__(self) -> int:
@@ -60,17 +63,14 @@ class WCBenchmark(Benchmark):
 
   def verify(self) -> bool:
     ground_truth = self._wc_offline()
-    to_test = self._client.read_all()
-    for k, v in track(to_test.items(), description="[blue]Verifying Consistency...[/blue]"):
-      if isinstance(k, bytes):    # Redis will return dict[bytes, bytes]
-        k = k.decode()
-      if ground_truth[k] != int(v):
-        return False
-    return True
+    return self._client.verify(ground_truth)
 
   def _wc_offline(self) -> dict[str, int]:
     wc = defaultdict(int)
     for word in self._word_list:
+      word.replace('"', '')
+      word.replace("'", '')
+
       wc[word] += 1
     return wc
 

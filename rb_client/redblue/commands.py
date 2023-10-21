@@ -9,8 +9,14 @@ class CommandsProtocol(Protocol):
 
 
 class Commands(CommandsProtocol):
-    def incrby(self, key: str, value: int = 1):
-        pass
+    def hincrby(self, key: int, field: str, value: int = 1):
+        self.execute_command("HINCRBY", key, field, value)
+
+    def hget(self, key: int, field: str):
+        return self.execute_command("HGET", key, field)
+
+    def hgetall(self, key: int):
+        return self.execute_command("HGETALL", key)
 
     def set(self, key: str, value: str):
         self.execute_command("SET", key, value)
