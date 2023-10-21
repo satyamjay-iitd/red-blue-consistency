@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"net"
@@ -38,8 +39,8 @@ func getConfig() Config {
 func readCommand(c io.ReadWriter) (*core.Command, error) {
 	var buf []byte = make([]byte, 512) //
 	n, err := c.Read(buf[:])
-	if err != nil {
-		return nil, err
+	if err != nil || n == 0 {
+		return nil, errors.New("empty Command")
 	}
 
 	// Remove new line characters from buf
@@ -141,10 +142,13 @@ func StartTcpServer() error {
 					continue
 				}
 
+				log.Println(cmd.Name)
+
 				err = respond(s, cmd)
 				if err != nil {
 					log.Println(err)
 				}
+				syscall.Close(fd)
 			}
 		}
 	}
