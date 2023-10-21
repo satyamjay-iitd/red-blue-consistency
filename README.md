@@ -1,4 +1,4 @@
-![Generated Button](https://raw.githubusercontent.com/satyamjay-iitd/red-blue-consistency/image-data/badge.svg)
+![Generated Button](https://github.com/satyamjay-iitd/red-blue-consistency/blob/image-data/badge.svg)
 
 # Comparing RedBlue Consistency VS Strict Consistency
 [RedBlue Consistency](https://www.usenix.org/system/files/conference/osdi12/osdi12-final-162.pdf)
