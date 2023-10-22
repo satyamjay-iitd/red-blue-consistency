@@ -2,6 +2,7 @@ package core
 
 var dataStore = make(map[string]*Object)
 var bank float64 = 0
+var set = make(map[string]struct{})
 
 func NewObject(val interface{}, objType ObjectType) *Object {
 	return &Object{

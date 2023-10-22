@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"strconv"
+	"strings"
 )
 
 const OK_STRING = "OK"
@@ -62,6 +63,21 @@ func HandleCommands(c io.ReadWriter, command *Command) error {
 			return errors.New("BAL command requires 0 arguments")
 		}
 		resp = handleBAL()
+	case "SETADD":
+		if len(command.Args) != 1 {
+			return errors.New("SETADD command requires 1 argument")
+		}
+		resp = handleSETADD(command.Args[0])
+	case "SETREM":
+		if len(command.Args) != 1 {
+			return errors.New("SETREM command requires 1 argument")
+		}
+		resp = handleSETREM(command.Args[0])
+	case "SETREAD":
+		if len(command.Args) != 0 {
+			return errors.New("SETREM command requires 0 argument")
+		}
+		resp = handleSETREAD()
 	default:
 		return errors.New("unknown command")
 	}
@@ -169,4 +185,27 @@ func handleAI(rate string) []byte {
 
 func handleBAL() []byte {
 	return []byte(strconv.FormatFloat(bank, 'f', -1, 64))
+}
+
+func handleSETADD(item string) []byte {
+	set[item] = struct{}{}
+	return OK
+}
+
+func handleSETREM(item string) []byte {
+	// TODO: Synchronize
+	delete(set, item)
+	return OK
+}
+
+func handleSETREAD() []byte {
+	keys := make([]string, len(set))
+
+	i := 0
+	for k := range set {
+		keys[i] = k
+		i++
+	}
+
+	return []byte(strings.Join(keys, " "))
 }
