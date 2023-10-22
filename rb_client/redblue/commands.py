@@ -23,3 +23,12 @@ class Commands(CommandsProtocol):
 
     def get(self, key: str) -> str:
         return self.execute_command("GET", key)
+
+    def deposit(self, amt: int):
+        return self.execute_command("DEP", amt)
+
+    def accrue_int(self, rate: int):
+        return self.execute_command("AI", rate)
+
+    def withdraw(self, amt: int):
+        return self.execute_command("WIT", amt)
