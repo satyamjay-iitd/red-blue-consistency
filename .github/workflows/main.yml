@@ -1,0 +1,45 @@
+name: Count Lines of Code
+
+# Controls when the action will run. Triggers the workflow on push or pull request 
+# events but only for the main branch
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  cloc:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v3
+
+    - name: Make Code Badge
+      uses: shadowmoose/GHA-LoC-Badge@1.0.0
+      id: badge
+      with:
+        debug: true
+        directory: ./
+        badge: ./output/badge.svg
+        ignore: 'README|data/*'
+  
+    - name: Print the output
+      run: |
+        echo "Scanned: ${{ steps.badge.outputs.counted_files }}";
+        echo "Line Count: ${{ steps.badge.outputs.total_lines }}";
+
+    - name: Deploy to image-data branch
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        publish_dir: ./output
+        publish_branch: image-data
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        user_name: 'github-actions[bot]'
+        user_email: 'github-actions[bot]@users.noreply.github.com'
