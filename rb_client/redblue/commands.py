@@ -32,3 +32,6 @@ class Commands(CommandsProtocol):
 
     def withdraw(self, amt: int):
         return self.execute_command("WIT", amt)
+
+    def balance(self) -> float:
+        return float(self.execute_command("BAL"))

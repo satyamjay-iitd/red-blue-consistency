@@ -40,20 +40,20 @@ def bank(
         txn_size: Annotated[int, typer.Argument(help="Number of transactions to run")] = 10000,
         w_p: Annotated[float, typer.Argument(help="Probability of withdrawal")] = 0.1,
         d_p: Annotated[float, typer.Argument(help="Probability of deposit")] = 0.8,
-        int_rate: Annotated[float, typer.Argument(help="Probability of deposit")] = 0.01,
+        int_rate: Annotated[int, typer.Argument(help="Interest rate X 1000", min=0, max=1000)] = 10,
 ):
     data_file = f'../data/bank/bank_{txn_size//1000}_{int(w_p * 10)}_{int(d_p * 10)}.dat'
     if not os.path.exists(data_file):
         print("Generating data file")
-        gen_bank_data(txn_size, w_p, d_p, int_rate)
+        gen_bank_data(txn_size, w_p, d_p, int_rate/1000)
         print("Data file generated")
 
     assert os.path.exists(data_file)
 
     if client == ClientsEnum.REDIS:
-        _client = RedisBankClient()
+        _client = RedisBankClient(interest=int_rate)
     elif client == ClientsEnum.REDBLUE:
-        _client = RedBlueBankClient()
+        _client = RedBlueBankClient(interest=int_rate)
     else:
         raise ValueError(f"Unknown client: {client}")
 
