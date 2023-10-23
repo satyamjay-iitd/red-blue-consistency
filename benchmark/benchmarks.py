@@ -7,6 +7,7 @@ from rich import print
 
 import config
 from clients.bank_client import BankClient
+from clients.set_client import SetClient
 from clients.wc_client import WordCountClient
 
 
@@ -98,7 +99,7 @@ class BankBenchmark(Benchmark):
         return math.isclose(float(self._client.read_balance()), self._bank_offline())
 
     def __len__(self):
-        pass
+        return self._command_list
 
     @property
     def name(self):
@@ -114,3 +115,44 @@ class BankBenchmark(Benchmark):
             elif command.startswith('i'):
                 balance += balance * config.BANK_INTEREST
         return balance
+
+
+class SetBenchmark(Benchmark):
+    def __init__(self, client: SetClient, data_file: str = '../data/bank.csv'):
+        super().__init__()
+        self._command_list: list[str] = open(data_file, 'r').read().split('\n')[:-1]
+        self._client: SetClient = client
+
+    def verify(self) -> bool:
+        ground_truth = self._set_offline()
+        return self._client.verify(ground_truth)
+
+    def __len__(self):
+        return self._command_list
+
+    def __call__(self, *args, **kwargs):
+        for command in track(self._command_list, description="Processing..."):
+            command, arg = command.split(" ")
+            if command == 'A':
+                self._client.add(arg)
+            elif command == 'R':
+                self._client.remove(arg)
+            else:
+                raise Exception("Bad file")
+
+    @property
+    def name(self):
+        return "Set"
+
+    def _set_offline(self) -> set[str]:
+        final = set()
+        for command in track(self._command_list, description="[blue]Verifying Consistency...[/blue]"):
+            command, arg = command.split(" ")
+            if command == 'A':
+                final.add(arg)
+            elif command == 'R':
+                final.discard(arg)
+            else:
+                raise Exception("Bad file")
+
+        return final

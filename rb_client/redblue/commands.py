@@ -35,3 +35,12 @@ class Commands(CommandsProtocol):
 
     def balance(self) -> float:
         return float(self.execute_command("BAL"))
+
+    def setadd(self, elem: str):
+        self.execute_command("SETADD", elem)
+
+    def setrem(self, elem: str):
+        self.execute_command("SETREM", elem)
+
+    def setread(self):
+        return self.execute_command("SETREAD")
