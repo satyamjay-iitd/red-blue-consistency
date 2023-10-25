@@ -37,18 +37,17 @@ func handleSyncBankRead(isMaster bool) (resp []byte) {
 		resp = []byte("Cannot call sync commands on master")
 	}
 	resp = []byte(strconv.FormatFloat(bank, 'f', -1, 64))
-
-	return
+	return resp
 }
 
 func handleSyncBankWrite(isMaster bool, amt string) []byte {
 	if isMaster {
 		return []byte("Cannot call sync commands on master")
 	}
-	amtI, err := strconv.Atoi(amt)
+	amtF, err := strconv.ParseFloat(amt, 64)
 	if err != nil {
 		log.Println(err)
 	}
-	bank += float64(amtI)
+	bank = amtF
 	return OK
 }

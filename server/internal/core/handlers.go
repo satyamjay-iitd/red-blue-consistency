@@ -179,38 +179,38 @@ func handleWIT(amt string, isMaster bool, conn1 *net.TCPConn, conn2 *net.TCPConn
 	amtF := float64(amtI)
 
 	// /////////////////////////// Get values from other servers \\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-	_, err = conn1.Write([]byte("SYNC_BANK READ"))
+	_, err = conn1.Write([]byte("SYNC_BANK_READ"))
 	if err != nil {
 		println("Write to slave failed:", err.Error())
 	}
 
-	_, err = conn2.Write([]byte("SYNC_BANK READ"))
+	_, err = conn2.Write([]byte("SYNC_BANK_READ"))
 	if err != nil {
 		println("Write to slave failed:", err.Error())
 	}
 
 	reply := make([]byte, 1024)
-	_, err = conn1.Read(reply)
+	n, err := conn1.Read(reply)
 	if err != nil {
 		println("Read from slave failed:", err.Error())
 	}
-	val1, err := strconv.ParseFloat(string(reply), 64)
+	val1, err := strconv.ParseFloat(string(reply[:n-1]), 64)
 	if err != nil {
-		println("Invalid response from slave")
+		println("Invalid response from slave", err.Error(), string(reply[:n-1]))
 	}
 
-	_, err = conn2.Read(reply)
+	n, err = conn2.Read(reply)
 	if err != nil {
 		println("Read from slave failed:", err.Error())
 	}
-	val2, err := strconv.ParseFloat(string(reply), 64)
+	val2, err := strconv.ParseFloat(string(reply[:n-1]), 64)
 	if err != nil {
-		println("Invalid response from slave")
+		println("Invalid response from slave", err.Error(), string(reply[:n-1]))
 	}
 
 	// //////////////////////////////////// Update local balance \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
-	bank += val1 + val2
+	bank += val1 + val2 - 2*prevBank
 
 	withdrawSuccess := false
 	if bank >= amtF {
@@ -219,12 +219,12 @@ func handleWIT(amt string, isMaster bool, conn1 *net.TCPConn, conn2 *net.TCPConn
 	}
 
 	// //////////////////////////////////// Update remote balance \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-	_, err = conn1.Write([]byte(fmt.Sprintf("SYNC_BANK WRITE %s", strconv.FormatFloat(bank, 'f', -1, 64))))
+	_, err = conn1.Write([]byte(fmt.Sprintf("SYNC_BANK_WRITE %s", strconv.FormatFloat(bank, 'f', -1, 64))))
 	if err != nil {
 		println("Write to slave failed:", err.Error())
 	}
 
-	_, err = conn2.Write([]byte(fmt.Sprintf("SYNC_BANK WRITE %s", strconv.FormatFloat(bank, 'f', -1, 64))))
+	_, err = conn2.Write([]byte(fmt.Sprintf("SYNC_BANK_WRITE %s", strconv.FormatFloat(bank, 'f', -1, 64))))
 	if err != nil {
 		println("Write to slave failed:", err.Error())
 	}
@@ -232,6 +232,7 @@ func handleWIT(amt string, isMaster bool, conn1 *net.TCPConn, conn2 *net.TCPConn
 	_, err = conn1.Read(reply)
 	_, err = conn2.Read(reply)
 
+	prevBank = bank
 	if withdrawSuccess {
 		return OK
 	}

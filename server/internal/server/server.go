@@ -82,7 +82,7 @@ func respond(c io.ReadWriter, command *core.Command) error {
 	if strings.HasPrefix(command.Name, "SYNC_") {
 		err = core.HandleSyncCommands(c, command, IsMaster)
 	} else {
-		err = core.HandleCommands(c, command, IsMaster, SlaveConnection1, SlaveConnection1)
+		err = core.HandleCommands(c, command, IsMaster, SlaveConnection1, SlaveConnection2)
 	}
 	if err != nil {
 		log.Println(err)
