@@ -11,7 +11,32 @@ import (
 	"redblue/internal/core"
 	"strings"
 	"syscall"
+	"time"
 )
+
+var SlaveConnection1 *net.TCPConn = nil
+var SlaveConnection2 *net.TCPConn = nil
+var IsMaster = false
+
+func connectToSlave(address string, idx int) (err error) {
+	tcpAddr, err := net.ResolveTCPAddr("tcp", address)
+	if err != nil {
+		return
+	}
+	conn, err := net.DialTCP("tcp", nil, tcpAddr)
+	if err != nil {
+		return
+	}
+
+	if idx == 1 {
+		SlaveConnection1 = conn
+	} else if idx == 2 {
+		SlaveConnection2 = conn
+	} else {
+		return errors.New("slave idx can only be 1 or 2")
+	}
+	return nil
+}
 
 type Config struct {
 	Port int `json:"port"`
@@ -21,7 +46,6 @@ func getConfig() Config {
 	file, err := os.Open("conf/config.json")
 	if err != nil {
 		log.Fatal(err)
-		panic(err)
 	}
 	defer file.Close()
 
@@ -31,7 +55,6 @@ func getConfig() Config {
 	err = decoder.Decode(&config)
 	if err != nil {
 		log.Fatal(err)
-		panic(err)
 	}
 	return config
 }
@@ -55,7 +78,12 @@ func readCommand(c io.ReadWriter) (*core.Command, error) {
 }
 
 func respond(c io.ReadWriter, command *core.Command) error {
-	err := core.HandleCommands(c, command)
+	var err error = nil
+	if strings.HasPrefix(command.Name, "SYNC_") {
+		err = core.HandleSyncCommands(c, command, IsMaster)
+	} else {
+		err = core.HandleCommands(c, command, IsMaster, SlaveConnection1, SlaveConnection1)
+	}
 	if err != nil {
 		log.Println(err)
 		_, err = c.Write([]byte(err.Error()))
@@ -64,7 +92,9 @@ func respond(c io.ReadWriter, command *core.Command) error {
 	return nil
 }
 
-func StartTcpServer() error {
+func StartTcpServer(_isMaster bool, slave1Address string, slave2Address string) error {
+	IsMaster = _isMaster
+
 	log.Println("Starting TCP server...")
 	config := getConfig()
 
@@ -86,6 +116,25 @@ func StartTcpServer() error {
 		Port: config.Port,
 		Addr: [4]byte{ip[0], ip[1], ip[2], ip[3]}}); err != nil {
 		return err
+	}
+
+	if IsMaster {
+		// Give time for slaves to be up
+		time.Sleep(2 * time.Second)
+		err = connectToSlave(slave1Address, 1)
+		if err != nil {
+			log.Fatal(err)
+			return err
+		}
+		log.Println("Connection with slave successful on, ", slave1Address)
+
+		err = connectToSlave(slave2Address, 2)
+		if err != nil {
+			log.Fatal(err)
+			return err
+		}
+		log.Println("Connection with slave successful on, ", slave2Address)
+
 	}
 
 	if err = syscall.Listen(serverFd, maxClients); err != nil {

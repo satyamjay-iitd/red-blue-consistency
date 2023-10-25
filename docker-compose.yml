@@ -46,6 +46,9 @@ services:
       dockerfile: ./Dockerfile
 
     container_name: redblue-1
+    depends_on:
+      - redblue-2
+      - redblue-3
     ports:
       - "7379:7379"
     networks:
@@ -53,7 +56,39 @@ services:
     profiles:
       - 'rb'
       - 'all'
-    
+    command: /redblue/redblue redblue-2 7379 redblue-3 7379
+
+  redblue-2:
+    build:
+      context: ./server
+      dockerfile: ./Dockerfile
+
+    container_name: redblue-2
+
+    ports:
+      - "7380:7379"
+    networks:
+      - redblue-cluster
+    profiles:
+      - 'rb'
+      - 'all'
+    command: /redblue/redblue
+
+  redblue-3:
+    build:
+      context: ./server
+      dockerfile: ./Dockerfile
+
+    container_name: redblue-3
+    ports:
+      - "7381:7379"
+    networks:
+      - redblue-cluster
+    profiles:
+      - 'rb'
+      - 'all'
+    command: /redblue/redblue
+
 networks:
   redis-replication:
     driver: bridge

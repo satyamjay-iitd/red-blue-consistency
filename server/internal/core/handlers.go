@@ -2,8 +2,10 @@ package core
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"log"
+	"net"
 	"strconv"
 	"strings"
 )
@@ -12,7 +14,9 @@ const OK_STRING = "OK"
 
 var OK = []byte(OK_STRING)
 
-func HandleCommands(c io.ReadWriter, command *Command) error {
+func HandleCommands(
+	c io.ReadWriter, command *Command, isMaster bool, slaveConn1, slaveConn2 *net.TCPConn,
+) error {
 	if command == nil {
 		return errors.New("Command is empty")
 	}
@@ -57,12 +61,12 @@ func HandleCommands(c io.ReadWriter, command *Command) error {
 		if len(command.Args) != 1 {
 			return errors.New("WIT command requires 2 arguments")
 		}
-		resp = handleWIT(command.Args[0])
+		resp = handleWIT(command.Args[0], isMaster, slaveConn1, slaveConn2)
 	case "BAL":
 		if len(command.Args) != 0 {
 			return errors.New("BAL command requires 0 arguments")
 		}
-		resp = handleBAL()
+		resp = handleBAL(isMaster, slaveConn1, slaveConn2)
 	case "SETADD":
 		if len(command.Args) != 1 {
 			return errors.New("SETADD command requires 1 argument")
@@ -148,28 +152,6 @@ func handleDEP(amt string) []byte {
 	return OK
 }
 
-func handleWIT(amt string) []byte {
-	amtI, err := strconv.Atoi(amt)
-	if err != nil {
-		log.Println(err)
-	}
-	amtF := float64(amtI)
-	if bank < amtF {
-		return withdrawFail()
-	}
-	return withdrawAck(amtF)
-}
-
-func withdrawAck(amt float64) []byte {
-	// TODO: Implement Synchronization
-	bank -= amt
-	return OK
-}
-
-func withdrawFail() []byte {
-	return []byte("Withdrawing more than Balance")
-}
-
 func handleAI(rate string) []byte {
 	rateI, err := strconv.Atoi(rate)
 	if err != nil {
@@ -183,7 +165,81 @@ func handleAI(rate string) []byte {
 	return OK
 }
 
-func handleBAL() []byte {
+func handleWIT(amt string, isMaster bool, conn1 *net.TCPConn, conn2 *net.TCPConn) []byte {
+	if !isMaster {
+		return []byte("Can only withdraw from Master")
+	}
+
+	// Parse input
+	amtI, err := strconv.Atoi(amt)
+	if err != nil {
+		log.Println(err)
+		return []byte("Invalid Amount format")
+	}
+	amtF := float64(amtI)
+
+	// /////////////////////////// Get values from other servers \\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	_, err = conn1.Write([]byte("SYNC_BANK READ"))
+	if err != nil {
+		println("Write to slave failed:", err.Error())
+	}
+
+	_, err = conn2.Write([]byte("SYNC_BANK READ"))
+	if err != nil {
+		println("Write to slave failed:", err.Error())
+	}
+
+	reply := make([]byte, 1024)
+	_, err = conn1.Read(reply)
+	if err != nil {
+		println("Read from slave failed:", err.Error())
+	}
+	val1, err := strconv.ParseFloat(string(reply), 64)
+	if err != nil {
+		println("Invalid response from slave")
+	}
+
+	_, err = conn2.Read(reply)
+	if err != nil {
+		println("Read from slave failed:", err.Error())
+	}
+	val2, err := strconv.ParseFloat(string(reply), 64)
+	if err != nil {
+		println("Invalid response from slave")
+	}
+
+	// //////////////////////////////////// Update local balance \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+	bank += val1 + val2
+
+	withdrawSuccess := false
+	if bank >= amtF {
+		bank -= amtF
+		withdrawSuccess = true
+	}
+
+	// //////////////////////////////////// Update remote balance \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	_, err = conn1.Write([]byte(fmt.Sprintf("SYNC_BANK WRITE %s", strconv.FormatFloat(bank, 'f', -1, 64))))
+	if err != nil {
+		println("Write to slave failed:", err.Error())
+	}
+
+	_, err = conn2.Write([]byte(fmt.Sprintf("SYNC_BANK WRITE %s", strconv.FormatFloat(bank, 'f', -1, 64))))
+	if err != nil {
+		println("Write to slave failed:", err.Error())
+	}
+
+	_, err = conn1.Read(reply)
+	_, err = conn2.Read(reply)
+
+	if withdrawSuccess {
+		return OK
+	}
+	return []byte("Insufficient Balance")
+}
+
+func handleBAL(isMaster bool, conn1, conn2 *net.TCPConn) []byte {
+	handleWIT("0", isMaster, conn1, conn2) // Shortcut For synchronization
 	return []byte(strconv.FormatFloat(bank, 'f', -1, 64))
 }
 

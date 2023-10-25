@@ -16,4 +16,4 @@ COPY conf /redblue/conf
 ENV CONF_DIR=/redblue/conf
 COPY --from=builder /app/bin/redblue /redblue/redblue
 
-CMD [ "/redblue/redblue" ]
+#ENTRYPOINT ["/redblue/redblue"]
