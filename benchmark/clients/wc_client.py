@@ -27,9 +27,13 @@ class WordCountClient(abc.ABC):
     def verify(self, ground_truth: dict[str, int]) -> bool:
         pass
 
+    @abc.abstractmethod
+    def flush(self):
+        pass
+
 
 class RedisWCClient(WordCountClient):
-    def __init__(self, flush=True):
+    def __init__(self, flush=False):
         super().__init__()
         self._client = redis.client.Redis(port=config.RDS_MASTER_PORT)
         self._client.flushdb() if flush else None
@@ -54,11 +58,14 @@ class RedisWCClient(WordCountClient):
                 return False
         return True
 
+    def flush(self):
+        self._client.flushdb()
+
 
 class RedBlueWCClient(WordCountClient):
-    def __init__(self):
+    def __init__(self, port=7379):
         super().__init__()
-        self._client = redblue.RedBlue()
+        self._client = redblue.RedBlue(port=port)
         self._key = 1
 
     def increment(self, key):
@@ -78,6 +85,9 @@ class RedBlueWCClient(WordCountClient):
             if ground_truth[k] != int(v):
                 return False
         return True
+
+    def flush(self):
+        pass
 
 
 if __name__ == '__main__':

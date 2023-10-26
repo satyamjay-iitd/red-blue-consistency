@@ -2,6 +2,9 @@ import abc
 import math
 import time
 from collections import defaultdict
+from multiprocessing import Pool
+from typing import Type, Any
+
 from rich.progress import track
 from rich import print
 
@@ -9,6 +12,7 @@ import config
 from clients.bank_client import BankClient
 from clients.set_client import SetClient
 from clients.wc_client import WordCountClient
+from utils.util import divide_chunks
 
 
 class Benchmark(abc.ABC):
@@ -45,17 +49,40 @@ class Benchmark(abc.ABC):
         pass
 
 
+def f(client_cls: Type[WordCountClient], args, word_list):
+    client = client_cls(**args)
+    # for word in track(word_list, description="Processing..."):
+    for word in word_list:
+        word.replace('"', '')
+        word.replace("'", '')
+        client.increment(word)
+
+
 class WCBenchmark(Benchmark):
-    def __init__(self, client: WordCountClient, txt_file: str = '../data/large.txt'):
+    def __init__(
+            self,
+            client_cls: Type[WordCountClient],
+            args: list[dict[str, Any]],
+            txt_file: str = '../data/large.txt'
+    ):
         super().__init__()
+        self._client = client_cls(**args[0])
+        self._client.flush()
+        self._num_threads = len(args)
+
         self._word_list: list[str] = open(txt_file, 'r').read().split()
-        self._client: WordCountClient = client
+
+        self.split_word_list = zip(
+            [client_cls]*self._num_threads,
+            args,
+            list(divide_chunks(self._word_list, self._num_threads))
+        )
 
     def __call__(self, *args, **kwargs):
-        for word in track(self._word_list, description="Processing..."):
-            word.replace('"', '')
-            word.replace("'", '')
-            self._client.increment(word)
+        with Pool(self._num_threads) as p:
+            p.starmap(f, self.split_word_list)
+            p.close()
+            p.join()
         self._client.read_all()
 
     @property

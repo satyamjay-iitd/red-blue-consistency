@@ -27,13 +27,11 @@ def wc(
         txt_file: Annotated[str, typer.Argument(help="Path to text file", exists=True)] = '../data/wc/small.txt'
 ):
     if client == ClientsEnum.REDIS:
-        _client = RedisWCClient()
+        WCBenchmark(RedisWCClient, [{}], txt_file).run()
     elif client == ClientsEnum.REDBLUE:
-        _client = RedBlueWCClient()
+        WCBenchmark(RedBlueWCClient, [{"port": 7379}, {"port": 7380}, {"port": 7381}], txt_file).run()
     else:
         raise ValueError(f"Unknown client: {client}")
-
-    WCBenchmark(_client, txt_file).run()
 
 
 @app.command()
