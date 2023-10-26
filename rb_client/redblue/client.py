@@ -6,9 +6,10 @@ from redblue.connection import ConnectionPool
 
 class RedBlue(Commands):
     def __init__(
-        self,
-        host="localhost",
-        port=7379,
+            self,
+            host="localhost",
+            port=7379,
+            master_port=7379
     ) -> None:
         """
         Initialize a new Redis client.
@@ -25,6 +26,9 @@ class RedBlue(Commands):
         """
         self.connection_pool = ConnectionPool(host=host, port=port)
         self.connection = self.connection_pool.get_connection("_")
+
+        self.master_conn_pool = ConnectionPool(host=host, port=master_port)
+        self.master_conn = self.master_conn_pool.get_connection("-")
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}<{repr(self.connection_pool)}>"
@@ -100,9 +104,15 @@ class RedBlue(Commands):
     # COMMAND EXECUTION AND PROTOCOL PARSING
     def execute_command(self, *args, **options):
         """Execute a command and return a parsed response"""
-        pool = self.connection_pool
         command_name = args[0]
-        conn = self.connection or pool.get_connection(command_name, **options)
+        is_red = options.pop('is_red', False)
+
+        if is_red:
+            pool = self.master_conn_pool
+            conn = self.master_conn or pool.get_connection(command_name, **options)
+        else:
+            pool = self.connection_pool
+            conn = self.connection or pool.get_connection(command_name, **options)
 
         try:
             return conn.retry.call_with_retry(
