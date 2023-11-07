@@ -64,7 +64,7 @@ class RedisBankClient(BankClient):
 class RedBlueBankClient(BankClient):
     def __init__(self, port=7379, interest=config.BANK_INTEREST):
         super().__init__(interest)
-        self._client = redblue.RedBlue(port)
+        self._client = redblue.RedBlue(port=port)
 
     def deposit(self, money: int) -> None:
         self._client.deposit(money)
