@@ -24,3 +24,10 @@ func Get(key string) *Object {
 	}
 	return obj
 }
+
+func flushAll() {
+	dataStore = make(map[string]*Object)
+	bank = 0
+	prevBank = 0
+	set = make(map[string]struct{})
+}

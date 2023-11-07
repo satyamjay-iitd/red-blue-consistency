@@ -83,6 +83,11 @@ func HandleCommands(
 			return errors.New("SETREM command requires 0 argument")
 		}
 		resp = handleSETREAD()
+	case "FLUSHALL":
+		if len(command.Args) != 0 {
+			return errors.New("FLUSHALL command requires 0 argument")
+		}
+		resp = handleFLUSHALL(isMaster, slaveConn1, slaveConn2)
 	default:
 		return errors.New("unknown command")
 	}
@@ -360,4 +365,25 @@ func handleSETREAD() []byte {
 	}
 
 	return []byte(strings.Join(keys, " "))
+}
+
+func handleFLUSHALL(isMaster bool, conn1 *net.TCPConn, conn2 *net.TCPConn) []byte {
+	flushAll()
+	if isMaster {
+		// call FLUSHALL on slaves
+		_, err := conn1.Write([]byte("FLUSHALL"))
+		if err != nil {
+			println("Write to slave failed:", err.Error())
+		}
+		_, err = conn2.Write([]byte("FLUSHALL"))
+		if err != nil {
+			println("Write to slave failed:", err.Error())
+		}
+
+		// read and discard reply
+		reply := make([]byte, 1024)
+		conn1.Read(reply)
+		conn2.Read(reply)
+	}
+	return OK
 }
