@@ -128,7 +128,7 @@ func handleHINCRBY(key string, field string, incr string) []byte {
 	hset.Incrby(field, incr)
 	if obj == nil {
 		// Create a new key if it doesn't exist
-		Set(key, NewObject(hset, nil, OBJ_TYPE_HASH_INT))
+		Set(key, NewObject(hset, make(HsetInt), OBJ_TYPE_HASH_INT))
 	}
 	return OK
 }
