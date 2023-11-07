@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"strconv"
+	"strings"
 )
 
 func HandleSyncCommands(
@@ -36,6 +37,16 @@ func HandleSyncCommands(
 			return errors.New("SYNC_HSETALL command requires 1 argument")
 		}
 		resp = handleSyncHSETALL(command.Args[0], c)
+	case "SYNC_SET_REM":
+		if len(command.Args) != 1 {
+			return errors.New("SYNC_SET_REM command requires 1 argument")
+		}
+		resp = handleSyncSetRem(command.Args[0])
+	case "SYNC_SET_READ":
+		if len(command.Args) != 0 {
+			return errors.New("SYNC_SET_READ command requires 0 arguments")
+		}
+		resp = handleSyncSetRead()
 	default:
 		return errors.New("unknown command")
 	}
@@ -108,6 +119,23 @@ func handleSyncHSETALL(key string, c io.ReadWriter) []byte {
 
 	Set(key, NewObject(newhset, nil, OBJ_TYPE_HASH_INT))
 	return OK
+}
+
+func handleSyncSetRem(item string) []byte {
+	delete(set, item)
+	return OK
+}
+
+func handleSyncSetRead() []byte {
+	keys := make([]string, len(set))
+
+	i := 0
+	for k := range set {
+		keys[i] = k
+		i++
+	}
+
+	return []byte(strings.Join(keys, " "))
 }
 
 func readCompleteData(c io.ReadWriter) ([]byte, error) {

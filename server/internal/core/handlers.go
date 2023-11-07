@@ -77,12 +77,12 @@ func HandleCommands(
 		if len(command.Args) != 1 {
 			return errors.New("SETREM command requires 1 argument")
 		}
-		resp = handleSETREM(command.Args[0])
+		resp = handleSETREM(command.Args[0], isMaster, slaveConn1, slaveConn2)
 	case "SETREAD":
 		if len(command.Args) != 0 {
 			return errors.New("SETREM command requires 0 argument")
 		}
-		resp = handleSETREAD()
+		resp = handleSETREAD(isMaster, slaveConn1, slaveConn2)
 	case "FLUSHALL":
 		if len(command.Args) != 0 {
 			return errors.New("FLUSHALL command requires 0 argument")
@@ -354,22 +354,83 @@ func handleSETADD(item string) []byte {
 	return OK
 }
 
-func handleSETREM(item string) []byte {
-	// TODO: Synchronize
+func handleSETREM(item string, isMaster bool, conn1, conn2 *net.TCPConn) []byte {
+	if !isMaster {
+		return []byte("Can only remove from Master")
+	}
+
+	startRedOpsAll(conn1, conn2)
+
+	_, err := conn1.Write([]byte(fmt.Sprintf("SYNC_SET_REM %s", item)))
+	if err != nil {
+		println("Write to slave failed:", err.Error())
+	}
+	_, err = conn2.Write([]byte(fmt.Sprintf("SYNC_SET_REM %s", item)))
+	if err != nil {
+		println("Write to slave failed:", err.Error())
+	}
+
+	// read and ignore response
+	reply := make([]byte, 1024)
+	conn1.Read(reply)
+	conn2.Read(reply)
+
 	delete(set, item)
+	endRedOpsAll(conn1, conn2)
 	return OK
 }
 
-func handleSETREAD() []byte {
-	keys := make([]string, len(set))
-
-	i := 0
-	for k := range set {
-		keys[i] = k
-		i++
+func handleSETREAD(isMaster bool, conn1, conn2 *net.TCPConn) []byte {
+	// This is a RED operation
+	if !isMaster {
+		return []byte("Can only read from Master")
 	}
 
-	return []byte(strings.Join(keys, " "))
+	err := startRedOpsAll(conn1, conn2)
+	if err != nil {
+		return []byte("Error syncing")
+	}
+
+	// Get the data from the slaves
+	_, err = conn1.Write([]byte("SYNC_SET_READ"))
+	if err != nil {
+		println("Write to slave failed:", err.Error())
+	}
+	_, err = conn2.Write([]byte("SYNC_SET_READ"))
+	if err != nil {
+		println("Write to slave failed:", err.Error())
+	}
+
+	data1, err := readCompleteData(conn1)
+	if err != nil {
+		log.Println(err)
+	}
+	data2, err := readCompleteData(conn2)
+	if err != nil {
+		log.Println(err)
+	}
+
+	// data1 and data2 will contain a \n at the end
+	// so we need to remove it
+	data1 = data1[:len(data1)-1]
+	data2 = data2[:len(data2)-1]
+
+	// split the data1 as tring by space
+	// and add it to the set
+	for _, item := range strings.Split(string(data1), " ") {
+		if item != "" {
+			set[item] = struct{}{}
+		}
+	}
+	for _, item := range strings.Split(string(data2), " ") {
+		if item != "" {
+			set[item] = struct{}{}
+		}
+	}
+
+	endRedOpsAll(conn1, conn2)
+
+	return handleSyncSetRead()
 }
 
 func handleFLUSHALL(isMaster bool, conn1 *net.TCPConn, conn2 *net.TCPConn) []byte {
