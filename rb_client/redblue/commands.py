@@ -44,3 +44,6 @@ class Commands(CommandsProtocol):
 
     def setread(self):
         return self.execute_command("SETREAD")
+
+    def flush(self):
+        return self.execute_command("FLUSHALL")

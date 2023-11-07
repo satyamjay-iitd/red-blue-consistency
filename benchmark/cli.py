@@ -30,6 +30,7 @@ def wc(
         WCBenchmark(RedisWCClient, [{}, {}, {}], txt_file).run()
     elif client == ClientsEnum.REDBLUE:
         WCBenchmark(RedBlueWCClient, [{"port": 7379}, {"port": 7380}, {"port": 7381}], txt_file).run()
+        # WCBenchmark(RedBlueWCClient, [{"port": 7379}], txt_file).run()
     else:
         raise ValueError(f"Unknown client: {client}")
 

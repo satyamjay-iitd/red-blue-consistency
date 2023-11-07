@@ -79,4 +79,4 @@ class RedBlueBankClient(BankClient):
         return self._client.balance()
     
     def flush(self):
-        pass
+        self._client.flush()

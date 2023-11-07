@@ -1,6 +1,14 @@
+#redblue:
+#	docker-compose --profile rb build
+#	docker-compose --profile rb up
+
 redblue:
-	docker-compose --profile rb build
-	docker-compose --profile rb up
+	cd server && GOOS=linux go build -o ./bin/redblue ./cmd/redblue
+	server/bin/redblue 7380 &
+	server/bin/redblue 7381 &
+	sleep 1
+	server/bin/redblue 127.0.0.1 7380 127.0.0.1 7381
+
 
 redis:
 	docker-compose --profile redis up
@@ -18,3 +26,4 @@ both:
 
 clean:
 	docker-compose --profile all down
+	pkill -9 redblue

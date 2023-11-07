@@ -87,7 +87,7 @@ class RedBlueWCClient(WordCountClient):
         return True
 
     def flush(self):
-        pass
+        self._client.flush()
 
 
 if __name__ == '__main__':

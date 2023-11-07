@@ -92,11 +92,11 @@ func respond(c io.ReadWriter, command *core.Command) error {
 	return nil
 }
 
-func StartTcpServer(_isMaster bool, slave1Address string, slave2Address string) error {
+func StartTcpServer(_isMaster bool, port int, slave1Address string, slave2Address string) error {
 	IsMaster = _isMaster
 
 	log.Println("Starting TCP server...")
-	config := getConfig()
+	//config := getConfig()
 
 	maxClients := 1000
 
@@ -113,7 +113,7 @@ func StartTcpServer(_isMaster bool, slave1Address string, slave2Address string) 
 
 	ip := net.ParseIP("0.0.0.0")
 	if err = syscall.Bind(serverFd, &syscall.SockaddrInet4{
-		Port: config.Port,
+		Port: port,
 		Addr: [4]byte{ip[0], ip[1], ip[2], ip[3]}}); err != nil {
 		return err
 	}
@@ -191,7 +191,7 @@ func StartTcpServer(_isMaster bool, slave1Address string, slave2Address string) 
 					continue
 				}
 
-				log.Println(cmd.Name)
+				//log.Println(cmd.Name)
 
 				if cmd.Name == "START_REDOP" {
 					if IsMaster {

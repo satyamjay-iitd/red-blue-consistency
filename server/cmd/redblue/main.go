@@ -10,7 +10,11 @@ import (
 func main() {
 	switch numArgs := len(os.Args); numArgs {
 	case 1:
-		err := server.StartTcpServer(false, "", "")
+		err := server.StartTcpServer(false, 7379, "", "")
+		panic(err)
+	case 2:
+		port, _ := strconv.Atoi(os.Args[1])
+		err := server.StartTcpServer(false, port, "", "")
 		panic(err)
 	case 5:
 		slaveHost1 := os.Args[1]
@@ -22,6 +26,7 @@ func main() {
 		}
 		err = server.StartTcpServer(
 			true,
+			7379,
 			fmt.Sprintf("%s:%d", slaveHost1, slavePort1),
 			fmt.Sprintf("%s:%d", slaveHost2, slavePort2),
 		)
