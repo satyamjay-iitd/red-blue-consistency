@@ -279,6 +279,9 @@ func handleWIT(amt string, isMaster bool, conn1 *net.TCPConn, conn2 *net.TCPConn
 	amtF := float64(amtI)
 
 	// /////////////////////////// Get values from other servers \\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+	startRedOpsAll(conn1, conn2)
+
 	_, err = conn1.Write([]byte("SYNC_BANK_READ"))
 	if err != nil {
 		println("Write to slave failed:", err.Error())
@@ -331,6 +334,8 @@ func handleWIT(amt string, isMaster bool, conn1 *net.TCPConn, conn2 *net.TCPConn
 
 	_, err = conn1.Read(reply)
 	_, err = conn2.Read(reply)
+
+	endRedOpsAll(conn1, conn2)
 
 	prevBank = bank
 	if withdrawSuccess {
