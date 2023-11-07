@@ -9,6 +9,7 @@ const (
 )
 
 type Object struct {
-	Val  interface{}
-	Type ObjectType
+	Val           interface{}
+	LastSyncedVal interface{} // filled only on master
+	Type          ObjectType
 }

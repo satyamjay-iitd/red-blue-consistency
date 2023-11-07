@@ -5,10 +5,11 @@ var bank float64 = 0
 var prevBank float64 = 0
 var set = make(map[string]struct{})
 
-func NewObject(val interface{}, objType ObjectType) *Object {
+func NewObject(val interface{}, lastSyncVal interface{}, objType ObjectType) *Object {
 	return &Object{
-		Val:  val,
-		Type: objType,
+		Val:           val,
+		LastSyncedVal: lastSyncVal,
+		Type:          objType,
 	}
 }
 

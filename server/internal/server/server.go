@@ -193,6 +193,19 @@ func StartTcpServer(_isMaster bool, slave1Address string, slave2Address string) 
 
 				log.Println(cmd.Name)
 
+				if cmd.Name == "START_REDOP" {
+					if IsMaster {
+						log.Println("Can not process this message on master")
+						syscall.Close(fd)
+						continue
+					}
+					err = processRedOps(s)
+					if err != nil {
+						log.Println(err)
+					}
+					continue
+				}
+
 				err = respond(s, cmd)
 				if err != nil {
 					log.Println(err)

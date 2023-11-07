@@ -1,6 +1,7 @@
 package core
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -46,7 +47,7 @@ func HandleCommands(
 		if len(command.Args) != 1 {
 			return errors.New("HGETALL command requires 1 argument")
 		}
-		resp = handleHGETALL(command.Args[0])
+		resp = handleHGETALL(command.Args[0], isMaster, slaveConn1, slaveConn2)
 	case "DEP":
 		if len(command.Args) != 1 {
 			return errors.New("DEP command requires 1 argument")
@@ -90,7 +91,7 @@ func HandleCommands(
 }
 
 func handleSET(key string, val string) []byte {
-	Set(key, NewObject(val, OBJ_TYPE_STRING))
+	Set(key, NewObject(val, nil, OBJ_TYPE_STRING))
 	return OK
 }
 
@@ -127,20 +128,114 @@ func handleHINCRBY(key string, field string, incr string) []byte {
 	hset.Incrby(field, incr)
 	if obj == nil {
 		// Create a new key if it doesn't exist
-		Set(key, NewObject(hset, OBJ_TYPE_HASH_INT))
+		Set(key, NewObject(hset, make(HsetInt), OBJ_TYPE_HASH_INT))
 	}
 	return OK
 }
 
-func handleHGETALL(key string) []byte {
+func handleHGETALL(key string, isMaster bool, conn1 *net.TCPConn, conn2 *net.TCPConn) []byte {
+	// This is a RED operation.. hence we need to sync first
+	if !isMaster {
+		return []byte("Can only get from Master")
+	}
+
+	err := startRedOpsAll(conn1, conn2)
+	if err != nil {
+		return []byte("Error syncing")
+	}
+
 	obj := Get(key)
 	if obj == nil {
-		return []byte("Key not found")
+		// key might have been created in a different server
+		obj = NewObject(make(HsetInt), make(HsetInt), OBJ_TYPE_HASH_INT)
+		// return []byte("Key not found")
 	} else if obj.Type != OBJ_TYPE_HASH_INT {
 		return []byte("Key is not an int hash")
 	}
 	hset := obj.Val.(HsetInt)
-	return hset.GetAll()
+	lastHset := obj.LastSyncedVal.(HsetInt)
+
+	// Get the data from the slaves
+	_, err = conn1.Write([]byte(fmt.Sprintf("SYNC_HGETALL %s", key)))
+	if err != nil {
+		println("Write to slave failed:", err.Error())
+	}
+	_, err = conn2.Write([]byte(fmt.Sprintf("SYNC_HGETALL %s", key)))
+	if err != nil {
+		println("Write to slave failed:", err.Error())
+	}
+
+	data1, err := readCompleteData(conn1)
+	if err != nil {
+		log.Println(err)
+	}
+	data2, err := readCompleteData(conn2)
+	if err != nil {
+		log.Println(err)
+	}
+
+	var hset1 HsetInt
+	var hset2 HsetInt
+	err = json.Unmarshal(data1, &hset1)
+	if err != nil {
+		log.Println(err)
+	}
+	err = json.Unmarshal(data2, &hset2)
+	if err != nil {
+		log.Println(err)
+	}
+
+	// Merge the data
+	for k, v := range hset1 {
+		hset[k] += (v - lastHset[k])
+	}
+	for k, v := range hset2 {
+		hset[k] += (v - lastHset[k])
+	}
+
+	// Update the last synced value
+	// deep copy the hset
+	for k, v := range hset {
+		lastHset[k] = v
+	}
+	Set(key, NewObject(hset, lastHset, OBJ_TYPE_HASH_INT))
+
+	// write the data to the slaves
+	_, err = conn1.Write([]byte(fmt.Sprintf("SYNC_HSETALL %s", key)))
+	if err != nil {
+		println("Write to slave failed:", err.Error())
+	}
+	_, err = conn2.Write([]byte(fmt.Sprintf("SYNC_HSETALL %s", key)))
+	if err != nil {
+		println("Write to slave failed:", err.Error())
+	}
+
+	// read and discard OK response
+	reply := make([]byte, 1024)
+	conn1.Read(reply)
+	conn2.Read(reply)
+
+	// Send the data
+	response := hset.GetAll()
+	_, err = conn1.Write(response)
+	if err != nil {
+		println("Write to slave failed:", err.Error())
+	}
+	_, err = conn2.Write(response)
+	if err != nil {
+		println("Write to slave failed:", err.Error())
+	}
+
+	// read and discard OK response
+	conn1.Read(reply)
+	conn2.Read(reply)
+
+	// End RED operation
+	err = endRedOpsAll(conn1, conn2)
+	if err != nil {
+		return []byte("Error syncing cleanup")
+	}
+	return response
 }
 
 func handleDEP(amt string) []byte {
