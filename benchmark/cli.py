@@ -27,7 +27,7 @@ def wc(
         txt_file: Annotated[str, typer.Argument(help="Path to text file", exists=True)] = '../data/wc/small.txt'
 ):
     if client == ClientsEnum.REDIS:
-        WCBenchmark(RedisWCClient, [{}], txt_file).run()
+        WCBenchmark(RedisWCClient, [{}, {}, {}], txt_file).run()
     elif client == ClientsEnum.REDBLUE:
         WCBenchmark(RedBlueWCClient, [{"port": 7379}, {"port": 7380}, {"port": 7381}], txt_file).run()
     else:
@@ -37,36 +37,45 @@ def wc(
 @app.command()
 def bank(
         client: Annotated[ClientsEnum, typer.Argument(case_sensitive=False, help="Client to use")],
-        txn_size: Annotated[int, typer.Argument(help="Number of transactions to run")] = 10000,
+        txn_size: Annotated[int, typer.Argument(help="Number of transactions to run")] = 100000,
         w_p: Annotated[float, typer.Argument(help="Probability of withdrawal")] = 0.1,
         d_p: Annotated[float, typer.Argument(help="Probability of deposit")] = 0.8,
-        int_rate: Annotated[int, typer.Argument(help="Interest rate X 1000", min=0, max=1000)] = 10,
+        int_rate: Annotated[int, typer.Argument(help="Interest rate X 10000", min=0, max=10000)] = 100,
 ):
-    data_file = f'../data/bank/bank_{txn_size//1000}_{int(w_p * 100)}_{int(d_p * 100)}.dat'
+    data_file = f'../data/bank/bank_{txn_size // 1000}_{int(w_p * 100)}_{int(d_p * 100)}.dat'
     if not os.path.exists(data_file):
         print("Generating data file")
-        gen_bank_data(txn_size, w_p, d_p, int_rate/1000, filepath=data_file)
+        gen_bank_data(txn_size, w_p, d_p, int_rate / 10000, filepath=data_file)
         print("Data file generated")
 
     assert os.path.exists(data_file)
 
     if client == ClientsEnum.REDIS:
-        _client = RedisBankClient(interest=int_rate)
+        BankBenchmark(
+            RedisBankClient,
+            [{'interest': int_rate}, {'interest': int_rate}, {'interest': int_rate}],
+            data_file
+        ).run()
     elif client == ClientsEnum.REDBLUE:
-        _client = RedBlueBankClient(interest=int_rate)
+        BankBenchmark(
+            RedBlueBankClient,
+            [
+                {"port": 7379, 'interest': int_rate},
+                {"port": 7380, 'interest': int_rate},
+                {"port": 7381, 'interest': int_rate}],
+            data_file
+        ).run()
     else:
         raise ValueError(f"Unknown client: {client}")
-
-    BankBenchmark(_client, data_file).run()
 
 
 @app.command(name="set")
 def _set(
         client: Annotated[ClientsEnum, typer.Argument(case_sensitive=False, help="Client to use")],
-        n_ops: Annotated[int, typer.Argument(help="Number of set ops")] = 100000,
+        n_ops: Annotated[int, typer.Argument(help="Number of set ops")] = 1000000,
         add_p: Annotated[float, typer.Argument(help="Probability of adding to set", min=0, max=1)] = 0.9,
 ):
-    data_file = f'../data/set/set_{n_ops//1000}_{add_p*10}.dat'
+    data_file = f'../data/set/set_{n_ops // 1000}_{add_p * 10}.dat'
     if not os.path.exists(data_file):
         print("Generating data file")
         gen_set_data(n_ops, add_p, filepath=data_file)
@@ -75,13 +84,11 @@ def _set(
     assert os.path.exists(data_file)
 
     if client == ClientsEnum.REDIS:
-        _client = RedisSetClient()
+        SetBenchmark(RedisSetClient, [{}, {}, {}], data_file).run()
     elif client == ClientsEnum.REDBLUE:
-        _client = RedBlueSetClient()
+        SetBenchmark(RedBlueSetClient, [{"port": 7379}, {"port": 7380}, {"port": 7381}], data_file).run()
     else:
         raise ValueError(f"Unknown client: {client}")
-
-    SetBenchmark(_client, data_file).run()
 
 
 if __name__ == "__main__":

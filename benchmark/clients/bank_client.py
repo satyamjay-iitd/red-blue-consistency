@@ -25,6 +25,10 @@ class BankClient(abc.ABC):
     @abc.abstractmethod
     def read_balance(self) -> float:
         pass
+    
+    @abc.abstractmethod
+    def flush(self):
+        pass
 
 
 class RedisBankClient(BankClient):
@@ -36,21 +40,31 @@ class RedisBankClient(BankClient):
 
     def deposit(self, money: float):
         self._client.incrbyfloat(self._key, money)
+        self._sync_replicas()
 
     def withdraw(self, money: float) -> None:
-        self._client.incrbyfloat(self._key, -money)
+        self._client.fcall('withdraw', 1, self._key, money)
+        self._sync_replicas()
 
     def accrue_interest(self) -> None:
-        self._client.fcall('accrue_interest', 1, self._key, self._interest/1000)
+        self._client.fcall('accrue_interest', 1, self._key, self._interest/10000)
+        self._sync_replicas()
 
     def read_balance(self) -> float:
         return self._client.get(self._key)
+    
+    def _sync_replicas(self):
+        if config.RDS_REP_IN_SYNC:
+            self._client.wait(2, 0)
+        
+    def flush(self):
+        self._client.flushdb()
 
 
 class RedBlueBankClient(BankClient):
-    def __init__(self, interest=config.BANK_INTEREST):
+    def __init__(self, port=7379, interest=config.BANK_INTEREST):
         super().__init__(interest)
-        self._client = redblue.RedBlue()
+        self._client = redblue.RedBlue(port)
 
     def deposit(self, money: int) -> None:
         self._client.deposit(money)
@@ -63,3 +77,6 @@ class RedBlueBankClient(BankClient):
 
     def read_balance(self) -> float:
         return self._client.balance()
+    
+    def flush(self):
+        pass

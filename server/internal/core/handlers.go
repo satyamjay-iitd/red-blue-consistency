@@ -157,10 +157,10 @@ func handleAI(rate string) []byte {
 	if err != nil {
 		return []byte("Interest rate must be an int")
 	}
-	if rateI < 0 || rateI > 1000 {
-		return []byte("Interest rate must be between 0 and 100")
+	if rateI < 0 || rateI > 10000 {
+		return []byte("Interest rate must be between 0 and 10000")
 	}
-	bank += bank * (float64(rateI) / 1000.0)
+	bank += bank * (float64(rateI) / 10000.0)
 
 	return OK
 }

@@ -40,6 +40,46 @@ services:
       - 'redis'
       - 'all'
   
+  redis-raft-master:
+    image: redislabs/ng-redis-raft
+    container_name: redis-raft-master
+    command: redis-server --loadmodule /redisraft.so --raft.addr redis-raft-master:6379
+    ports:
+      - "6379:6379"
+    networks:
+      - redis-raft
+    profiles:
+      - 'redis-raft'
+      - 'all'
+    
+  redis-raft-slave-1:
+    image: redislabs/ng-redis-raft
+    container_name: redis-raft-slave-1
+    command: redis-server --loadmodule /redisraft.so --raft.addr redis-raft-slave-1:6379
+    depends_on:
+      - redis-raft-master
+    ports:
+      - "6380:6379"
+    networks:
+      - redis-raft
+    profiles:
+      - 'redis-raft'
+      - 'all'
+
+  redis-raft-slave-2:
+    image: redislabs/ng-redis-raft
+    container_name: redis-raft-slave-2
+    command: redis-server --loadmodule /redisraft.so --raft.addr redis-raft-slave-2:6379
+    depends_on:
+      - redis-raft-master
+    ports:
+      - "6381:6379"
+    networks:
+      - redis-raft
+    profiles:
+      - 'redis-raft'
+      - 'all'
+
   redblue-1:
     build:
       context: ./server
@@ -93,4 +133,6 @@ networks:
   redis-replication:
     driver: bridge
   redblue-cluster:
+    driver: bridge
+  redis-raft:
     driver: bridge
