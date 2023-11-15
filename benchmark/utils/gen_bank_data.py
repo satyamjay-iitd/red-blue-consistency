@@ -1,7 +1,7 @@
 from random import random, randint
 
 
-def gen_data(n, w_prob, d_prob, int_rate=0.01, filepath=None):
+def gen_data(n, w_prob, d_prob, filepath=None):
     """
   Generate data for bank benchmark.
   Format:-
@@ -15,7 +15,6 @@ def gen_data(n, w_prob, d_prob, int_rate=0.01, filepath=None):
     n: Number of total transactions
     w_prob: Probability of withdrawal
     d_prob: Probability of deposit
-    int_rate: Interest rate
 
   Returns:
 

@@ -46,7 +46,7 @@ def bank(
     data_file = f'../data/bank/bank_{txn_size // 1000}_{int(w_p * 100)}_{int(d_p * 100)}.dat'
     if not os.path.exists(data_file):
         print("Generating data file")
-        gen_bank_data(txn_size, w_p, d_p, int_rate / 10000, filepath=data_file)
+        gen_bank_data(txn_size, w_p, d_p, filepath=data_file)
         print("Data file generated")
 
     assert os.path.exists(data_file)
