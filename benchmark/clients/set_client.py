@@ -2,7 +2,6 @@ import abc
 
 import redis
 import redblue
-from rich.progress import track
 
 import config
 
@@ -37,15 +36,21 @@ class RedisSetClient(SetClient):
 
     def add(self, word: str):
         self._client.sadd(self._key, word)
+        self._sync_replicas()
 
     def remove(self, word: str):
         self._client.srem(self._key, word)
+        self._sync_replicas()
 
     def read(self) -> set[str]:
         return self._client.smembers(self._key)
 
     def verify(self, ground_truth: set[str]) -> bool:
         return self.read() == ground_truth
+
+    def _sync_replicas(self):
+        if config.RDS_REP_IN_SYNC:
+            self._client.wait(2, 0)
 
 
 class RedBlueSetClient(SetClient):
