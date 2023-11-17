@@ -58,12 +58,19 @@ class RedBlueSetClient(SetClient):
         super().__init__()
         self._client = redblue.RedBlue(port=port)
         self._key = 1
+        self._dynamic = True
 
     def add(self, word: str):
-        self._client.setadd(word)
+        if self._dynamic:
+            self._client.setadddyn(word)
+        else:
+            self._client.setadd(word)
 
     def remove(self, word: str):
-        self._client.setrem(word)
+        if self._dynamic:
+            self._client.setremdyn(word)
+        else:
+            self._client.setrem(word)
 
     def read(self) -> set[str]:
         return {word for word in self._client.setread().split()}

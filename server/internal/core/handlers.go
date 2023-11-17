@@ -103,7 +103,7 @@ func HandleCommands(
 		}
 		resp = handleFLUSHALL(isMaster, slaveConn1, slaveConn2)
 	default:
-		return errors.New("unknown command")
+		return errors.New(command.Name + ": " + "unknown command")
 	}
 	_, err := c.Write(resp)
 	return err
