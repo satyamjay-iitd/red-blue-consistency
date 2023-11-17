@@ -9,7 +9,6 @@ import (
 	"net"
 	"strconv"
 	"strings"
-	"sync"
 )
 
 const OK_STRING = "OK"
@@ -362,34 +361,20 @@ func handleSETREM(item string, isMaster bool, conn1, conn2 *net.TCPConn) []byte 
 
 	startRedOpsAll(conn1, conn2)
 
-	var wg sync.WaitGroup
-	wg.Add(2)
+	_, err := conn1.Write([]byte(fmt.Sprintf("SYNC_SET_REM %s", item)))
+	if err != nil {
+		println("Write to slave failed:", err.Error())
+	}
+	_, err = conn2.Write([]byte(fmt.Sprintf("SYNC_SET_REM %s", item)))
+	if err != nil {
+		println("Write to slave failed:", err.Error())
+	}
 
-	go func() {
-		_, err := conn1.Write([]byte(fmt.Sprintf("SYNC_SET_REM %s", item)))
-		if err != nil {
-			println("Write to slave failed:", err.Error())
-		}
-		// read and ignore response
-		reply := make([]byte, 1024)
-		conn1.Read(reply)
+	// read and ignore response
+	reply := make([]byte, 1024)
+	conn1.Read(reply)
+	conn2.Read(reply)
 
-		wg.Done()
-	}()
-
-	go func() {
-		_, err := conn2.Write([]byte(fmt.Sprintf("SYNC_SET_REM %s", item)))
-		if err != nil {
-			println("Write to slave failed:", err.Error())
-		}
-		// read and ignore response
-		reply := make([]byte, 1024)
-		conn2.Read(reply)
-
-		wg.Done()
-	}()
-
-	wg.Wait()
 	delete(set, item)
 	endRedOpsAll(conn1, conn2)
 	return OK
