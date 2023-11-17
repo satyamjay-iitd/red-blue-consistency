@@ -31,19 +31,19 @@ class Commands(CommandsProtocol):
         return self.execute_command("AI", rate)
 
     def withdraw(self, amt: int):
-        return self.execute_command("WIT", amt)
+        return self.execute_command("WIT", amt, is_red=True)
 
     def balance(self) -> float:
-        return float(self.execute_command("BAL"))
+        return float(self.execute_command("BAL", is_red=True))
 
     def setadd(self, elem: str):
         self.execute_command("SETADD", elem)
 
     def setrem(self, elem: str):
-        self.execute_command("SETREM", elem)
+        self.execute_command("SETREM", elem, is_red=True)
 
     def setread(self):
-        return self.execute_command("SETREAD")
+        return self.execute_command("SETREAD", is_red=True)
 
     def flush(self):
         return self.execute_command("FLUSHALL")
