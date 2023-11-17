@@ -4,6 +4,9 @@ from typing import Protocol
 class CommandsProtocol(Protocol):
     connection_pool: "ConnectionPool"
 
+    IS_ADD_BLUE = True
+    num_reds, num_blues = 0, 0
+
     def execute_command(self, *args, **options) -> str | int | None:
         ...
 
@@ -31,19 +34,41 @@ class Commands(CommandsProtocol):
         return self.execute_command("AI", rate)
 
     def withdraw(self, amt: int):
-        return self.execute_command("WIT", amt)
+        return self.execute_command("WIT", amt, is_red=True)
 
     def balance(self) -> float:
         return float(self.execute_command("BAL"))
 
     def setadd(self, elem: str):
-        self.execute_command("SETADD", elem)
+        if self.IS_ADD_BLUE:
+            self.execute_command("SETADDB", elem)
+            self.num_blues += 1
+        else:
+            self.execute_command("SETADDR", elem, is_red=True)
+            self.num_reds += 1
+
+        if self.num_reds > self.num_blues:
+            print(f"Changing colors {self.num_reds} {self.num_blues}")
+            self.IS_ADD_BLUE = (not self.IS_ADD_BLUE)
+            self.num_reds = 0
+            self.num_blues = 0
 
     def setrem(self, elem: str):
-        self.execute_command("SETREM", elem)
+        if self.IS_ADD_BLUE:
+            self.execute_command("SETREMR", elem, is_red=True)
+            self.num_reds += 1
+        else:
+            self.execute_command("SETADDB", elem)
+            self.num_blues += 1
+
+        if self.num_reds > self.num_blues:
+            print(f"Changing colors {self.num_reds} {self.num_blues}")
+            self.IS_ADD_BLUE = (not self.IS_ADD_BLUE)
+            self.num_reds = 0
+            self.num_blues = 0
 
     def setread(self):
-        return self.execute_command("SETREAD")
+        return self.execute_command("SETREAD", is_red=True)
 
     def flush(self):
         return self.execute_command("FLUSHALL")
