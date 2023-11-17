@@ -54,11 +54,11 @@ class RedisSetClient(SetClient):
 
 
 class RedBlueSetClient(SetClient):
-    def __init__(self, port=7379):
+    def __init__(self, port=7379, dynamic: bool = False):
         super().__init__()
         self._client = redblue.RedBlue(port=port)
         self._key = 1
-        self._dynamic = True
+        self._dynamic = dynamic
 
     def add(self, word: str):
         if self._dynamic:

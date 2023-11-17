@@ -73,23 +73,30 @@ def bank(
 @app.command(name="set")
 def _set(
         client: Annotated[ClientsEnum, typer.Argument(case_sensitive=False, help="Client to use")],
-        data_file: Annotated[str, typer.Argument(help="Path of the data file")],
         n_ops: Annotated[int, typer.Argument(help="Number of set ops")] = 1000000,
         add_p: Annotated[float, typer.Argument(help="Probability of adding to set", min=0, max=1)] = 0.9,
+        dynamic: Annotated[bool, typer.Argument(help="Enable dynamic consistency")] = False
 ):
-    if not data_file:
-        data_file = f'../data/set/set_{n_ops // 1000}_{add_p * 10}.dat'
-        if not os.path.exists(data_file):
-            print("Generating data file")
-            gen_set_data(n_ops, add_p, filepath=data_file)
-            print("Data file generated")
+    data_file = f'../data/set/set_{n_ops // 1000}_{add_p * 10}_{dynamic}.dat'
+    if not os.path.exists(data_file):
+        print("Generating data file")
+        gen_set_data(n_ops, add_p, dynamic=dynamic, filepath=data_file)
+        print("Data file generated")
 
-        assert os.path.exists(data_file)
+    assert os.path.exists(data_file)
 
     if client == ClientsEnum.REDIS:
         SetBenchmark(RedisSetClient, [{}, {}, {}], data_file).run()
     elif client == ClientsEnum.REDBLUE:
-        SetBenchmark(RedBlueSetClient, [{"port": 7379}, {"port": 7380}, {"port": 7381}], data_file).run()
+        SetBenchmark(
+            RedBlueSetClient,
+            [
+                {"port": 7379, "dynamic": dynamic},
+                {"port": 7380, "dynamic": dynamic},
+                {"port": 7381, "dynamic": dynamic}
+            ],
+            data_file
+        ).run()
     else:
         raise ValueError(f"Unknown client: {client}")
 
