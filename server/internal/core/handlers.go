@@ -13,6 +13,8 @@ import (
 
 const OK_STRING = "OK"
 
+var CURRENT_COLOR int32 = 0
+
 var OK = []byte(OK_STRING)
 
 func HandleCommands(
@@ -68,16 +70,28 @@ func HandleCommands(
 			return errors.New("BAL command requires 0 arguments")
 		}
 		resp = handleBAL(isMaster, slaveConn1, slaveConn2)
-	case "SETADD":
+	case "SETADDB":
 		if len(command.Args) != 1 {
 			return errors.New("SETADD command requires 1 argument")
 		}
-		resp = handleSETADD(command.Args[0])
-	case "SETREM":
+		resp = handleSETADDBlue(command.Args[0])
+	case "SETADDR":
+		if len(command.Args) != 1 {
+			return errors.New("SETADD command requires 1 argument")
+		}
+		resp = handleSETADDRed(command.Args[0], isMaster, slaveConn1, slaveConn2)
+	case "SETREMB":
 		if len(command.Args) != 1 {
 			return errors.New("SETREM command requires 1 argument")
 		}
-		resp = handleSETREM(command.Args[0], isMaster, slaveConn1, slaveConn2)
+		resp = handleSETREMBlue(command.Args[0])
+
+	case "SETREMR":
+		if len(command.Args) != 1 {
+			return errors.New("SETREM command requires 1 argument")
+		}
+		resp = handleSETREMRed(command.Args[0], isMaster, slaveConn1, slaveConn2)
+
 	case "SETREAD":
 		if len(command.Args) != 0 {
 			return errors.New("SETREM command requires 0 argument")
@@ -89,7 +103,7 @@ func HandleCommands(
 		}
 		resp = handleFLUSHALL(isMaster, slaveConn1, slaveConn2)
 	default:
-		return errors.New("unknown command")
+		return errors.New(command.Name + ": " + "unknown command")
 	}
 	_, err := c.Write(resp)
 	return err
@@ -349,12 +363,43 @@ func handleBAL(isMaster bool, conn1, conn2 *net.TCPConn) []byte {
 	return []byte(strconv.FormatFloat(bank, 'f', -1, 64))
 }
 
-func handleSETADD(item string) []byte {
+func handleSETADDBlue(item string) []byte {
 	set[item] = struct{}{}
 	return OK
 }
 
-func handleSETREM(item string, isMaster bool, conn1, conn2 *net.TCPConn) []byte {
+func handleSETREMBlue(item string) []byte {
+	delete(set, item)
+	return OK
+}
+
+func handleSETADDRed(item string, isMaster bool, conn1, conn2 *net.TCPConn) []byte {
+	if !isMaster {
+		return []byte("Can only remove from Master")
+	}
+
+	startRedOpsAll(conn1, conn2)
+
+	_, err := conn1.Write([]byte(fmt.Sprintf("SYNC_SET_ADD %s", item)))
+	if err != nil {
+		println("Write to slave failed:", err.Error())
+	}
+	_, err = conn2.Write([]byte(fmt.Sprintf("SYNC_SET_ADD %s", item)))
+	if err != nil {
+		println("Write to slave failed:", err.Error())
+	}
+
+	// read and ignore response
+	reply := make([]byte, 1024)
+	conn1.Read(reply)
+	conn2.Read(reply)
+
+	set[item] = struct{}{}
+	endRedOpsAll(conn1, conn2)
+	return OK
+}
+
+func handleSETREMRed(item string, isMaster bool, conn1, conn2 *net.TCPConn) []byte {
 	if !isMaster {
 		return []byte("Can only remove from Master")
 	}
