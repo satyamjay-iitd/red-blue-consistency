@@ -1,12 +1,11 @@
 package server
 
 import (
-	"log"
 	"redblue/internal/core"
 )
 
 func processRedOps(s Socket) error {
-	log.Println("Processing redop")
+	//log.Println("Processing redop")
 
 	// Send OK to master
 	_, err := s.Write(core.OK)
@@ -20,7 +19,7 @@ func processRedOps(s Socket) error {
 		if err != nil {
 			return err
 		}
-		log.Println(cmd.Name)
+		//log.Println(cmd.Name)
 
 		if cmd.Name == "END_REDOP" {
 			_, err = s.Write(core.OK)

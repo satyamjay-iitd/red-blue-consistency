@@ -37,7 +37,7 @@ class Commands(CommandsProtocol):
         return self.execute_command("WIT", amt, is_red=True)
 
     def balance(self) -> float:
-        return float(self.execute_command("BAL"))
+        return float(self.execute_command("BAL", is_red=True))
 
     def setadd(self, elem: str):
         if self.IS_ADD_BLUE:
