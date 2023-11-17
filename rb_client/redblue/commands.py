@@ -39,33 +39,25 @@ class Commands(CommandsProtocol):
     def balance(self) -> float:
         return float(self.execute_command("BAL"))
 
-    def setadd(self, elem: str):
-        if self.IS_ADD_BLUE:
-            self.execute_command("SETADDB", elem)
-            self.num_blues += 1
-        else:
-            self.execute_command("SETADDR", elem, is_red=True)
-            self.num_reds += 1
+    # def setadd(self, elem: str):
+    #     if self.IS_ADD_BLUE:
+    #         self.execute_command("SETADDB", elem)
+    #         self.num_blues += 1
+    #     else:
+    #         self.execute_command("SETADDR", elem, is_red=True)
+    #         self.num_reds += 1
+    #
+    #     if self.num_reds > self.num_blues:
+    #         print(f"Changing colors {self.num_reds} {self.num_blues}")
+    #         self.IS_ADD_BLUE = (not self.IS_ADD_BLUE)
+    #         self.num_reds = 0
+    #         self.num_blues = 0
 
-        if self.num_reds > self.num_blues:
-            print(f"Changing colors {self.num_reds} {self.num_blues}")
-            self.IS_ADD_BLUE = (not self.IS_ADD_BLUE)
-            self.num_reds = 0
-            self.num_blues = 0
+    def setadd(self, elem: str):
+        self.execute_command("SETADD", elem)
 
     def setrem(self, elem: str):
-        if self.IS_ADD_BLUE:
-            self.execute_command("SETREMR", elem, is_red=True)
-            self.num_reds += 1
-        else:
-            self.execute_command("SETADDB", elem)
-            self.num_blues += 1
-
-        if self.num_reds > self.num_blues:
-            print(f"Changing colors {self.num_reds} {self.num_blues}")
-            self.IS_ADD_BLUE = (not self.IS_ADD_BLUE)
-            self.num_reds = 0
-            self.num_blues = 0
+        self.execute_command("SETREM", elem, is_red=True)
 
     def setread(self):
         return self.execute_command("SETREAD", is_red=True)
