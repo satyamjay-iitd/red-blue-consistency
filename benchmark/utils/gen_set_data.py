@@ -1,7 +1,7 @@
 from random import randint, random
 
 
-def gen_set_data(n, add_p, filepath=None):
+def gen_set_data(n, add_p, dynamic = False, filepath=None):
     """
 
     :param n: Number of operations
@@ -9,6 +9,10 @@ def gen_set_data(n, add_p, filepath=None):
     :param filepath:
     :return:
     """
+
+    if dynamic:
+        return gen_set_data2(n, add_p, filepath)
+
     assert add_p <= 1.0
     filepath = f'../data/set/set_{n // 1000}_{int(add_p * 100)}.dat' if filepath is None else filepath
     file = open(filepath, 'w')

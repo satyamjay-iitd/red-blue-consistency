@@ -7,7 +7,7 @@ class CommandsProtocol(Protocol):
     connection_pool: "ConnectionPool"
 
     IS_ADD_BLUE = True
-    num_reds, num_blues = 0, 0
+    num_blues, total_red, total = 0, 0, 0
 
     def execute_command(self, *args, **options) -> str | int | None:
         ...
@@ -48,10 +48,12 @@ class Commands(CommandsProtocol):
         self.execute_command("SETADDR", elem, is_red=True)
 
     def setadddyn(self, elem: str):
+        self.total += 1
         if self.IS_ADD_BLUE:
             self.execute_command("SETADDB", elem)
             self.num_blues += 1 if self.num_blues < CHANGE_AFTER else 0
         else:
+            self.total_red += 1
             self.execute_command("SETADDR", elem, is_red=True)
             self.num_blues -= 1 if self.num_blues > -CHANGE_AFTER else 0
 
@@ -62,8 +64,10 @@ class Commands(CommandsProtocol):
             self.num_blues = 0
 
     def setremdyn(self, elem: str):
+        self.total += 1
 
         if self.IS_ADD_BLUE:
+            self.total_red += 1
             self.execute_command("SETREMR", elem, is_red=True)
             self.num_blues -= 1 if self.num_blues > -CHANGE_AFTER else 0
         else:
