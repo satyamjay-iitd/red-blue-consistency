@@ -1,5 +1,7 @@
 from typing import Protocol
 
+CHANGE_AFTER = 100
+
 
 class CommandsProtocol(Protocol):
     connection_pool: "ConnectionPool"
@@ -37,27 +39,42 @@ class Commands(CommandsProtocol):
         return self.execute_command("WIT", amt, is_red=True)
 
     def balance(self) -> float:
-        return float(self.execute_command("BAL"))
+        return float(self.execute_command("BAL", is_red=True))
 
-    # def setadd(self, elem: str):
-    #     if self.IS_ADD_BLUE:
-    #         self.execute_command("SETADDB", elem)
-    #         self.num_blues += 1
-    #     else:
-    #         self.execute_command("SETADDR", elem, is_red=True)
-    #         self.num_reds += 1
-    #
-    #     if self.num_reds > self.num_blues:
-    #         print(f"Changing colors {self.num_reds} {self.num_blues}")
-    #         self.IS_ADD_BLUE = (not self.IS_ADD_BLUE)
-    #         self.num_reds = 0
-    #         self.num_blues = 0
+    def setadd(self, elem):
+        self.execute_command("SETADDB", elem)
 
-    def setadd(self, elem: str):
-        self.execute_command("SETADD", elem)
+    def setrem(self, elem):
+        self.execute_command("SETADDR", elem, is_red=True)
 
-    def setrem(self, elem: str):
-        self.execute_command("SETREM", elem, is_red=True)
+    def setadddyn(self, elem: str):
+        if self.IS_ADD_BLUE:
+            self.execute_command("SETADDB", elem)
+            self.num_blues += 1 if self.num_blues < CHANGE_AFTER else 0
+        else:
+            self.execute_command("SETADDR", elem, is_red=True)
+            self.num_blues -= 1 if self.num_blues > -CHANGE_AFTER else 0
+
+        if self.num_blues < 0:
+            print(f"Changing colors Of Add from Red to Blue")
+            self.IS_ADD_BLUE = (not self.IS_ADD_BLUE)
+            self.num_reds = 0
+            self.num_blues = 0
+
+    def setremdyn(self, elem: str):
+
+        if self.IS_ADD_BLUE:
+            self.execute_command("SETREMR", elem, is_red=True)
+            self.num_blues -= 1 if self.num_blues > -CHANGE_AFTER else 0
+        else:
+            self.execute_command("SETADDB", elem)
+            self.num_blues += 1 if self.num_blues < CHANGE_AFTER else 0
+
+        if self.num_blues < 0:
+            print(f"Changing colors Of Add from Blue to Red")
+            self.IS_ADD_BLUE = (not self.IS_ADD_BLUE)
+            self.num_reds = 0
+            self.num_blues = 0
 
     def setread(self):
         return self.execute_command("SETREAD", is_red=True)

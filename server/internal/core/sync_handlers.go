@@ -42,6 +42,11 @@ func HandleSyncCommands(
 			return errors.New("SYNC_SET_REM command requires 1 argument")
 		}
 		resp = handleSyncSetRem(command.Args[0])
+	case "SYNC_SET_ADD":
+		if len(command.Args) != 1 {
+			return errors.New("SYNC_SET_REM command requires 1 argument")
+		}
+		resp = handleSyncSetAdd(command.Args[0])
 	case "SYNC_SET_READ":
 		if len(command.Args) != 0 {
 			return errors.New("SYNC_SET_READ command requires 0 arguments")
@@ -123,6 +128,11 @@ func handleSyncHSETALL(key string, c io.ReadWriter) []byte {
 
 func handleSyncSetRem(item string) []byte {
 	delete(set, item)
+	return OK
+}
+
+func handleSyncSetAdd(item string) []byte {
+	set[item] = struct{}{}
 	return OK
 }
 

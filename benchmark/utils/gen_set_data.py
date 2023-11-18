@@ -24,17 +24,26 @@ def gen_set_data(n, add_p, filepath=None):
 
 
 def gen_set_data2(n, add_p, filepath=None):
-    assert add_p <= 100
+    assert add_p <= 1
     filepath = f'../data/set/set2_{n // 1000}_{int(add_p * 100)}.dat' if filepath is None else filepath
     file = open(filepath, 'w')
+    for j in range(3):
+        num_a, num_r = 0, 0
+        for k in range(5):
+            for i in range(n//15):
+                r = random()
+                if r < add_p:
+                    element = randint(1, 100)
+                    num_a += 1
+                    file.write(f'A {element}\n')
+                else:
+                    element = randint(1, 100)
+                    num_r += 1
+                    file.write(f'R {element}\n')
+            add_p = 1 - add_p
 
-    for _ in range(5):
-        for i in range(n//5):
-            if random() < add_p:
-                element = randint(1, 100)
-                file.write(f'A {element}\n')
-            else:
-                element = randint(1, 100)
-                file.write(f'R {element}\n')
-        add_p = 1 - add_p
+        print(num_a, num_r)
 
+
+if __name__ == "__main__":
+    gen_set_data2(1000000, 0.95, 'dynamic')
